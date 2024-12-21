@@ -60,12 +60,15 @@
 clear; clc;
 
 % Input parameters
-f = input('Insert resonance frequency (f) [Hz]: ');
-er = input('Insert dielectric constant (er): ');
-h = input('Height of dielectric (h) [m]: ');
-w_line = input('Width of microstrip line (w_line) [m]: ');
+% f = input('Insert resonance frequency (f) [Hz]: ');
+% er = input('Insert dielectric constant (er): ');
+% h = input('Height of dielectric (h) [m]: ');
+% w_line = input('Width of microstrip line (w_line) [m]: ');
 c = 3e8;
-
+f=3.4*10^9;
+er=4.3;
+h=0.0008;
+w=0.002;
 % Calculate patch dimensions
 W_patch = c / (2 * f * sqrt((er + 1) / 2));
 fprintf('Width of a patch = %f m\n', W_patch);
@@ -83,40 +86,16 @@ W_ground = W_patch * 2 + 6 * h;
 L_ground = 2 * L_patch + 6 * h;
 
 fprintf('Width of a ground = %f m\nLength of a ground = %f m\n', W_ground, L_ground);
-
+StripWidth = 0.0002;
 % Create dielectric substrate
 substrate = dielectric('Name', 'FR4', 'EpsilonR', er, 'Thickness', h);
+offset1=0.002113
+offset2= 0
+insetpatch = patchMicrostripInsetfed(Length=L_patch, Height=35*10^(-6), GroundPlaneLength=L_ground, GroundPlaneWidth=W_ground,Substrate=substrate,StripLineWidth=StripWidth,Conductor=metal("Copper"),FeedOffset=[offset1 offset2]);
+% insetpatch = patchMicrostrip(Length=L_patch, Height=35*10^(-6), GroundPlaneLength=L_ground, GroundPlaneWidth=W_ground,Substrate=substrate,StripLineWidth=StripWidth,Conductor=metal("Copper"),FeedOffset=[offset1 offset2]);
 
-% Define feed offset for the patch
-feedOffsetX = 0; % Feed offset along the length (L_patch)
-feedOffsetY = 0; % Centered feed for simplicity
+show(insetpatch);
 
-% Create patch antenna
-patchAnt = patchMicrostrip('Length', L_patch, 'Width', W_patch, ...
-    'GroundPlaneLength', L_ground, 'GroundPlaneWidth', W_ground, ...
-    'Substrate', substrate, 'Conductor', metal('Copper'), ...
-    'FeedOffset', [feedOffsetX feedOffsetY]);
-
-% Define microstrip feed line geometry as a rectangle
-lineLength = (L_ground - L_patch) / 2; % Length from ground edge to patch
-feedLine = antenna.Rectangle('Length', lineLength, 'Width', w_line, ...
-    'Center', [-lineLength/2, 0], 'Name', 'FeedLine');
-
-% Combine patch and feed line manually using geometry group
-geomGroup = antenna.Geometry('Name', 'CombinedAntenna');
-add(geomGroup, patchAnt.Geometry); % Add patch geometry
-add(geomGroup, feedLine); % Add feed line geometry
-
-% Assign substrate and conductor to the geometry group
-geomGroup.Substrate = substrate;
-geomGroup.Conductor = metal('Copper');
-
-% Display the combined geometry
-figure;
-show(geomGroup);
-title('Microstrip Patch Antenna with Feed Line');
-
-% Analyze and display radiation pattern
-figure;
-pattern(geomGroup, f);
-title('Radiation Pattern of Microstrip Patch Antenna with Feed Line');
+RL = returnLoss(insetpatch,f,50);
+show(RL);
+%% 
